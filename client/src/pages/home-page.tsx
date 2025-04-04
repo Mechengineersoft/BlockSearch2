@@ -33,7 +33,37 @@ export default function HomePage() {
     };
 
     recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
+      let transcript = event.results[0][0].transcript.toLowerCase();
+      
+      // Process special number sequences (e.g., "triple four" -> "444")
+      transcript = transcript.replace(/\b(single|one)\b/gi, '1')
+        .replace(/\b(double|two)\b/gi, '2')
+        .replace(/\b(triple|three)\b/gi, '3')
+        .replace(/\b(quadruple|four)\b/gi, '4')
+        .replace(/\b(quintuple|five)\b/gi, '5')
+        .replace(/\bzero\b/gi, '0')
+        .replace(/\bsix\b/gi, '6')
+        .replace(/\bseven\b/gi, '7')
+        .replace(/\beight\b/gi, '8')
+        .replace(/\bnine\b/gi, '9');
+
+      // Handle repeated numbers (e.g., "triple four" -> "444")
+      transcript = transcript.replace(/(single|one|double|two|triple|three|quadruple|four|quintuple|five)\s+(\d)/gi, (_, multiplier, digit) => {
+        const count = {
+          'single': 1, 'one': 1,
+          'double': 2, 'two': 2,
+          'triple': 3, 'three': 3,
+          'quadruple': 4, 'four': 4,
+          'quintuple': 5, 'five': 5
+        }[multiplier.toLowerCase()] || 1;
+        return digit.repeat(count);
+      });
+
+      // Remove spaces between spelled-out characters (e.g., "a b a" -> "aba")
+      if (transcript.split(' ').every(word => word.length === 1)) {
+        transcript = transcript.replace(/\s+/g, '');
+      }
+
       switch (inputField) {
         case 'blockNo':
           setBlockNo(transcript);
